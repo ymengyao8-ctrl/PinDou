@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>拼豆图纸生成器</title>
+    <link rel="stylesheet" href="./styles.css?v=13" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Bead Pattern Generator</p>
+            <h1>拼豆图纸生成器</h1>
+          </div>
+          <div class="actions">
+            <label class="upload-button">
+              <input id="imageInput" type="file" accept="image/*" />
+              上传图片
+            </label>
+            <button id="downloadButton" type="button">下载图纸 PNG</button>
+          </div>
+        </header>
+
+        <div class="canvas-panel">
+          <div id="emptyState" class="empty-state">
+            <div class="sample-sheet" aria-hidden="true">
+              <span>A2</span>
+              <span>H2</span>
+              <span>M12</span>
+              <span>B27</span>
+              <span></span>
+              <span>A4</span>
+              <span>H2</span>
+              <span></span>
+              <span>M12</span>
+            </div>
+            <p>上传图片后生成带色号和用量的拼豆图纸</p>
+          </div>
+          <canvas id="patternCanvas" width="1200" height="900" aria-label="拼豆图纸预览"></canvas>
+        </div>
+      </section>
+
+      <aside class="toolbox">
+        <section class="panel">
+          <h2>图纸设置</h2>
+          <label class="field">
+            <span>色号体系</span>
+            <select id="paletteSelect"></select>
+          </label>
+          <label class="field">
+            <span>拼豆板尺寸</span>
+            <select id="boardPreset">
+              <option value="29x29:29">29 x 29 标准单板</option>
+              <option value="58x58:29">58 x 58 标准 2 x 2</option>
+              <option value="87x58:29">87 x 58 标准 3 x 2</option>
+              <option value="50x50:50" selected>50 x 50 常见方板</option>
+              <option value="50x55:50">50 x 55 例图比例</option>
+              <option value="72x72:12">72 x 72 大图纸</option>
+              <option value="100x100:50">100 x 100 大幅 2 x 2</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>图片适配</span>
+            <select id="fitMode">
+              <option value="contain" selected>完整显示，留白不排满</option>
+              <option value="cover">铺满板面，裁切边缘</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>图纸精细度</span>
+            <select id="detailLevel">
+              <option value="practical" selected>实用大色块</option>
+              <option value="simple">超简大色块</option>
+              <option value="balanced">均衡</option>
+              <option value="photo">接近原图</option>
+            </select>
+          </label>
+          <label class="toggle">
+            <input id="fillTransparentGaps" type="checkbox" disabled />
+            <span>空隙填入透明豆</span>
+          </label>
+          <p id="transparentGapHint" class="hint">上传带透明空隙的 PNG 后可用</p>
+          <button id="regenerateButton" class="primary-action" type="button">重新生成图纸</button>
+        </section>
+
+        <section class="panel">
+          <h2>主体抠图</h2>
+          <label class="toggle">
+            <input id="enableCutout" type="checkbox" />
+            <span>只生成框选主体</span>
+          </label>
+          <canvas id="cutoutCanvas" class="cutout-preview" width="320" height="220" aria-label="主体框选预览"></canvas>
+          <div class="button-row">
+            <button id="resetCutout" type="button">重置框选</button>
+            <button id="fullCutout" type="button">全图</button>
+          </div>
+          <label class="toggle">
+            <input id="autoRemoveBg" type="checkbox" checked />
+            <span>自动清除框内背景</span>
+          </label>
+          <label class="control">
+            <span>抠图强度</span>
+            <input id="cutoutThreshold" type="range" min="10" max="90" value="36" />
+            <output id="cutoutThresholdValue">36</output>
+          </label>
+          <p id="cutoutHint" class="hint">上传图片后，在预览里拖框框住主体</p>
+        </section>
+
+        <section class="panel">
+          <h2>显示</h2>
+          <label class="toggle">
+            <input id="showCodes" type="checkbox" checked />
+            <span>显示每格色号</span>
+          </label>
+          <label class="toggle">
+            <input id="showCoords" type="checkbox" checked />
+            <span>显示坐标</span>
+          </label>
+          <label class="toggle">
+            <input id="showGrid" type="checkbox" checked />
+            <span>显示网格线</span>
+          </label>
+          <label class="field">
+            <span>清晰度</span>
+            <select id="renderScale">
+              <option value="18">标准清晰</option>
+              <option value="22" selected>高清编号</option>
+              <option value="28">超清导出</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>只看某色</span>
+            <select id="focusColor">
+              <option value="">全部色号</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel">
+          <h2>替换色号</h2>
+          <div class="replace-grid">
+            <label>
+              <span>从</span>
+              <select id="replaceFrom"></select>
+            </label>
+            <label>
+              <span>替换为</span>
+              <select id="replaceTo"></select>
+            </label>
+          </div>
+          <div id="replaceSuggestions" class="candidate-list" aria-live="polite"></div>
+          <div class="button-row">
+            <button id="applyReplace" type="button">应用替换</button>
+            <button id="resetColors" type="button">还原</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>统计</h2>
+          <label class="field">
+            <span>排序方式</span>
+            <select id="sortMode">
+              <option value="code" selected>按色号 A1、A2、B1、B2</option>
+              <option value="count">按豆子数量降序</option>
+            </select>
+          </label>
+          <dl id="summary" class="summary"></dl>
+          <div id="beadList" class="bead-list"></div>
+        </section>
+      </aside>
+    </main>
+
+    <script defer src="./palettes.js?v=13"></script>
+    <script defer src="./app.js?v=13"></script>
+  </body>
+</html>
