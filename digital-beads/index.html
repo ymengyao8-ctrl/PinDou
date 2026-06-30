@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>电子拼豆</title>
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body>
+    <main class="studio-shell">
+      <header class="topbar">
+        <div class="brand">
+          <a class="back-link" href="../" aria-label="返回图纸生成器">←</a>
+          <div>
+            <p>Digital Bead Studio</p>
+            <h1>电子拼豆</h1>
+          </div>
+        </div>
+
+        <div class="pattern-meta">
+          <span id="patternName">练习图纸</span>
+          <strong id="progressText">0 / 0</strong>
+          <div class="progress-track" aria-hidden="true"><i id="progressBar"></i></div>
+        </div>
+
+        <div class="top-actions">
+          <button id="helpButton" type="button">操作说明</button>
+          <button id="undoButton" type="button" disabled>撤回本次</button>
+          <button id="resetButton" class="danger" type="button">清空豆板</button>
+        </div>
+      </header>
+
+      <section class="workbench" id="workbench">
+        <section class="board-zone" aria-label="拼豆板工作区">
+          <div class="zone-heading">
+            <div>
+              <p class="step-label">03 · 落豆</p>
+              <h2>透明豆板</h2>
+            </div>
+            <label class="opacity-control">
+              图纸影子
+              <input id="shadowOpacity" type="range" min="5" max="55" value="28" />
+            </label>
+          </div>
+          <div class="board-viewport" id="boardViewport">
+            <canvas id="boardCanvas" aria-label="点阵豆板"></canvas>
+          </div>
+          <p class="board-tip">按住左键移动豆针；同时按住右键夹紧。到豆板上松开右键，开始逐颗滑豆。</p>
+        </section>
+
+        <section class="tool-zone">
+          <div class="tray-copy">
+            <div>
+              <p class="step-label">01 · 装豆 / 02 · 理豆</p>
+              <h2>十道立豆铲</h2>
+            </div>
+            <div class="tray-stat"><strong id="trayCount">0</strong><span>颗豆</span></div>
+          </div>
+          <div class="tray-wrap" id="trayWrap">
+            <canvas id="trayCanvas" width="720" height="250" aria-label="十道立豆铲"></canvas>
+            <span class="tray-hint" id="trayHint">把右侧豆罐拖过来，左右晃动倒豆</span>
+          </div>
+          <p class="tray-help">豆铲里有散豆时，按住空白处左右摇晃，让豆子滚进凹槽。每道最多 14 颗，共 10 道。</p>
+
+          <div class="needle-dock">
+            <div>
+              <p class="step-label">工具</p>
+              <h3>双针滑豆笔</h3>
+              <p>拖到已立好的豆子上，同时按住左右键夹起一串。</p>
+            </div>
+            <button id="recallNeedle" class="needle-home" type="button" title="把豆针召回停放位">
+              <span>召回豆针</span>
+            </button>
+          </div>
+        </section>
+
+        <aside class="color-rack">
+          <div class="rack-heading">
+            <div>
+              <p class="step-label">豆罐墙</p>
+              <h2 id="rackTitle">本图用色</h2>
+            </div>
+            <button id="paletteToggle" class="icon-button" type="button" title="切换本图用色/完整色卡">全</button>
+          </div>
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="colorSearch" type="search" placeholder="搜索色号" autocomplete="off" />
+          </label>
+          <div id="jarRack" class="jar-rack" aria-label="拼豆色号罐"></div>
+        </aside>
+
+        <div id="needle" class="needle" role="button" tabindex="0" aria-label="双针滑豆笔">
+          <div class="needle-handle"><i></i><i></i></div>
+          <div class="needle-rods"><i></i><i></i></div>
+          <div id="needleLoad" class="needle-load"></div>
+          <span id="needleBadge" class="needle-badge">0</span>
+        </div>
+
+        <div id="jarGhost" class="jar-ghost" aria-hidden="true">
+          <div class="jar-cap"></div>
+          <div class="jar-body"><span></span></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="helpDialog" class="dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <section class="help-card">
+        <button id="closeHelp" class="close-button" type="button" aria-label="关闭">×</button>
+        <p class="step-label">HOW TO PLAY</p>
+        <h2 id="helpTitle">像现实一样，慢慢把它拼出来</h2>
+        <ol>
+          <li><strong>倒豆</strong><span>从右侧拖起正确色号的豆罐，在豆铲上来回晃动。每次换向都会洒出一些豆子。</span></li>
+          <li><strong>理豆</strong><span>放回豆罐，再按住豆铲空白处左右摇晃，散豆会滚进十道凹槽。</span></li>
+          <li><strong>取豆</strong><span>按住双针左键拖动，针尖对准凹槽；在左键未松开时再按住右键夹紧，最多取 14 颗。触控板也可按住 Option / Alt 代替右键。</span></li>
+          <li><strong>滑豆</strong><span>保持左键，把豆针移到图纸影子的格心；松开右键会开始落豆，匀速平移可以连续滑豆。</span></li>
+        </ol>
+        <div class="warning-note">右键松得太久，剩余豆子会一次滑落并散到邻格——这时用“撤回本次”重来。浏览器右键菜单已在工作台内关闭。</div>
+        <button id="startPlaying" class="primary" type="button">明白，开始拼</button>
+      </section>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="../palettes.js?v=15"></script>
+    <script defer src="./app.js?v=2"></script>
+  </body>
+</html>

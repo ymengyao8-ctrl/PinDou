@@ -103,6 +103,22 @@ h2 {
   flex-wrap: wrap;
 }
 
+.use-pattern-button {
+  background: #1f6f5c;
+  border-color: #1f6f5c;
+  color: #fff;
+}
+
+.use-pattern-button:hover:not(:disabled) {
+  background: #175b4b;
+  border-color: #175b4b;
+}
+
+.use-pattern-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .upload-button,
 .actions button,
 .primary-action,

@@ -1,6 +1,7 @@
 const els = {
   input: document.querySelector("#imageInput"),
   download: document.querySelector("#downloadButton"),
+  usePattern: document.querySelector("#usePatternButton"),
   canvas: document.querySelector("#patternCanvas"),
   empty: document.querySelector("#emptyState"),
   paletteSelect: document.querySelector("#paletteSelect"),
@@ -79,6 +80,7 @@ function init() {
 function bindEvents() {
   els.input.addEventListener("change", handleImageUpload);
   els.download.addEventListener("click", downloadPattern);
+  els.usePattern.addEventListener("click", usePatternInDigitalStudio);
   els.paletteSelect.addEventListener("change", () => {
     state.paletteKey = els.paletteSelect.value;
     state.replacements.clear();
@@ -200,6 +202,26 @@ function buildAndRender() {
   }
   buildPattern();
   renderPattern();
+  els.usePattern.disabled = false;
+}
+
+function usePatternInDigitalStudio() {
+  if (!state.cells.length) return;
+  const pattern = {
+    version: 1,
+    width: state.board.width,
+    height: state.board.height,
+    unit: state.board.unit,
+    paletteKey: state.paletteKey,
+    paletteName: window.BEAD_PALETTES[state.paletteKey]?.name || state.paletteKey,
+    cells: state.cells.map((cell) => {
+      const bead = finalBeadForCell(cell);
+      return bead ? { code: bead.code, hex: bead.hex } : null;
+    }),
+    createdAt: new Date().toISOString(),
+  };
+  localStorage.setItem("digitalBeadPattern", JSON.stringify(pattern));
+  window.location.href = "./digital-beads/";
 }
 
 function updateLabels() {
