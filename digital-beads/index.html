@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>电子拼豆</title>
-    <link rel="stylesheet" href="./styles.css?v=3" />
+    <link rel="stylesheet" href="./styles.css?v=4" />
   </head>
   <body>
     <main class="studio-shell">
@@ -38,15 +38,26 @@
               <p class="step-label">03 · 落豆</p>
               <h2>透明豆板</h2>
             </div>
-            <label class="opacity-control">
-              图纸影子
-              <input id="shadowOpacity" type="range" min="5" max="55" value="28" />
-            </label>
+            <div class="board-controls">
+              <label class="compact-toggle">
+                <input id="showShadowCodes" type="checkbox" checked />
+                显示色号
+              </label>
+              <label class="opacity-control">
+                影子
+                <input id="shadowOpacity" type="range" min="5" max="55" value="28" />
+              </label>
+              <label class="opacity-control">
+                缩放
+                <input id="boardZoom" type="range" min="100" max="220" step="10" value="130" />
+                <output id="boardZoomValue">130%</output>
+              </label>
+            </div>
           </div>
           <div class="board-viewport" id="boardViewport">
             <canvas id="boardCanvas" aria-label="点阵豆板"></canvas>
           </div>
-          <p class="board-tip">按住左键移动豆针；同时按住右键夹紧。到豆板上松开右键，开始逐颗滑豆。</p>
+          <p class="board-tip">每个影子格内显示购买色号；鼠标悬停可查看大号色号与坐标。按住左键移动豆针，同时按住右键夹紧。</p>
         </section>
 
         <section class="tool-zone">
@@ -121,8 +132,9 @@
     </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="boardTooltip" class="board-tooltip" role="tooltip" aria-hidden="true"></div>
 
     <script src="../palettes.js?v=15"></script>
-    <script defer src="./app.js?v=3"></script>
+    <script defer src="./app.js?v=4"></script>
   </body>
 </html>

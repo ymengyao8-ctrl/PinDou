@@ -6,7 +6,11 @@ const els = {
   patternEntryLink: document.querySelector("#patternEntryLink"),
   boardCanvas: document.querySelector("#boardCanvas"),
   boardViewport: document.querySelector("#boardViewport"),
+  boardTooltip: document.querySelector("#boardTooltip"),
+  showShadowCodes: document.querySelector("#showShadowCodes"),
   shadowOpacity: document.querySelector("#shadowOpacity"),
+  boardZoom: document.querySelector("#boardZoom"),
+  boardZoomValue: document.querySelector("#boardZoomValue"),
   trayCanvas: document.querySelector("#trayCanvas"),
   trayWrap: document.querySelector("#trayWrap"),
   trayHint: document.querySelector("#trayHint"),
@@ -97,6 +101,13 @@ function bindEvents() {
   window.addEventListener("load", scheduleNeedleHome);
   els.recallNeedle.addEventListener("click", recallNeedle);
   els.shadowOpacity.addEventListener("input", drawBoard);
+  els.showShadowCodes.addEventListener("change", drawBoard);
+  els.boardZoom.addEventListener("input", () => {
+    els.boardZoomValue.value = `${els.boardZoom.value}%`;
+    resizeBoard();
+  });
+  els.boardCanvas.addEventListener("mousemove", showBoardTooltip);
+  els.boardCanvas.addEventListener("mouseleave", hideBoardTooltip);
   els.paletteToggle.addEventListener("click", () => {
     state.showAllColors = !state.showAllColors;
     els.paletteToggle.textContent = state.showAllColors ? "图" : "全";
@@ -198,7 +209,9 @@ function resizeBoard() {
   const maxWidth = Math.max(390, viewport.width - 34);
   const maxHeight = Math.max(390, viewport.height - 34);
   const fit = Math.floor(Math.min(maxWidth / width, maxHeight / height));
-  const cell = clamp(fit, width > 70 || height > 70 ? 8 : 10, 20);
+  const baseCell = clamp(fit, width > 70 || height > 70 ? 8 : 10, 20);
+  const zoom = Number(els.boardZoom.value) / 100;
+  const cell = Math.max(8, Math.round(baseCell * zoom));
   state.boardCell = cell;
   els.boardCanvas.width = width * cell + 2;
   els.boardCanvas.height = height * cell + 2;
@@ -233,6 +246,10 @@ function drawBoard() {
       boardCtx.arc(cx, cy, Math.max(1.25, size * .11), 0, Math.PI * 2);
       boardCtx.fill();
 
+      if (target && els.showShadowCodes.checked && size >= 10) {
+        drawShadowCode(target.code, cx, cy, size);
+      }
+
       if (placed) drawBoardBead(cx, cy, size, placed, target?.code === placed.code);
     }
   }
@@ -240,6 +257,51 @@ function drawBoard() {
   boardCtx.strokeStyle = "rgba(55,75,65,.22)";
   boardCtx.lineWidth = 1;
   boardCtx.strokeRect(.5, .5, width * size + 1, height * size + 1);
+}
+
+function drawShadowCode(code, cx, cy, size) {
+  const fontSize = clamp(size * (String(code).length > 3 ? .27 : .33), 4.5, 9);
+  boardCtx.save();
+  boardCtx.globalAlpha = .82;
+  boardCtx.fillStyle = "#19392f";
+  boardCtx.strokeStyle = "rgba(255,255,255,.92)";
+  boardCtx.lineWidth = Math.max(1.4, fontSize * .32);
+  boardCtx.font = `900 ${fontSize}px Arial, sans-serif`;
+  boardCtx.textAlign = "center";
+  boardCtx.textBaseline = "middle";
+  boardCtx.strokeText(code, cx, cy + .3);
+  boardCtx.fillText(code, cx, cy + .3);
+  boardCtx.restore();
+}
+
+function showBoardTooltip(event) {
+  const cell = boardCellFromPoint(event.clientX, event.clientY);
+  const target = cell ? state.pattern.cells[cell.index] : null;
+  if (!cell || !target) {
+    hideBoardTooltip();
+    return;
+  }
+  els.boardTooltip.innerHTML = `<i style="--tooltip-color:${target.hex}"></i><strong>${escapeHtml(target.code)}</strong><span>第 ${cell.row + 1} 行 · 第 ${cell.col + 1} 列</span>`;
+  els.boardTooltip.style.left = `${event.clientX > window.innerWidth - 180 ? event.clientX - 155 : event.clientX + 14}px`;
+  els.boardTooltip.style.top = `${Math.max(8, event.clientY - 18)}px`;
+  els.boardTooltip.classList.add("visible");
+  els.boardTooltip.setAttribute("aria-hidden", "false");
+}
+
+function hideBoardTooltip() {
+  els.boardTooltip.classList.remove("visible");
+  els.boardTooltip.setAttribute("aria-hidden", "true");
+}
+
+function boardCellFromPoint(clientX, clientY) {
+  const rect = els.boardCanvas.getBoundingClientRect();
+  if (!pointInRect(clientX, clientY, rect)) return null;
+  const x = (clientX - rect.left) * (els.boardCanvas.width / rect.width) - 1;
+  const y = (clientY - rect.top) * (els.boardCanvas.height / rect.height) - 1;
+  const col = Math.floor(x / state.boardCell);
+  const row = Math.floor(y / state.boardCell);
+  if (col < 0 || row < 0 || col >= state.pattern.width || row >= state.pattern.height) return null;
+  return { col, row, index: row * state.pattern.width + col };
 }
 
 function drawBoardBead(cx, cy, size, bead, correct) {
