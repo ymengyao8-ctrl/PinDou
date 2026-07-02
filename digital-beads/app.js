@@ -17,6 +17,7 @@ const els = {
   trayWrap: document.querySelector("#trayWrap"),
   trayHint: document.querySelector("#trayHint"),
   trayCount: document.querySelector("#trayCount"),
+  clearTrayButton: document.querySelector("#clearTrayButton"),
   jarRack: document.querySelector("#jarRack"),
   rackTitle: document.querySelector("#rackTitle"),
   paletteToggle: document.querySelector("#paletteToggle"),
@@ -26,6 +27,10 @@ const els = {
   needleBadge: document.querySelector("#needleBadge"),
   needleHome: document.querySelector(".needle-home"),
   recallNeedle: document.querySelector("#recallNeedle"),
+  tweezer: document.querySelector("#tweezer"),
+  tweezerHeld: document.querySelector("#tweezerHeld"),
+  tweezerHome: document.querySelector(".tweezer-home"),
+  recallTweezer: document.querySelector("#recallTweezer"),
   jarGhost: document.querySelector("#jarGhost"),
   helpDialog: document.querySelector("#helpDialog"),
   helpButton: document.querySelector("#helpButton"),
@@ -88,6 +93,16 @@ const state = {
     hasMoved: false,
     pickupNoticeAt: 0,
   },
+  tweezer: {
+    dragging: false,
+    x: 0,
+    y: 0,
+    offsetX: 23,
+    offsetY: 48,
+    targetIndex: -1,
+    hasMoved: false,
+    heldTimer: null,
+  },
   feedTimer: null,
   toastTimer: null,
   finish: {
@@ -125,6 +140,7 @@ function init() {
   renderNeedleLoad();
   updateProgress();
   scheduleNeedleHome();
+  scheduleTweezerHome();
   if (state.pattern.isDemo) els.helpDialog.classList.remove("hidden");
 }
 
@@ -141,9 +157,15 @@ function bindEvents() {
     resizeBoard();
     if (!state.needle.dragging && !state.needle.hasMoved) positionNeedleHome();
     else if (!state.needle.dragging) setNeedlePosition(state.needle.x, state.needle.y);
+    if (!state.tweezer.dragging && !state.tweezer.hasMoved) positionTweezerHome();
+    else if (!state.tweezer.dragging) setTweezerPosition(state.tweezer.x, state.tweezer.y);
   });
-  window.addEventListener("load", scheduleNeedleHome);
+  window.addEventListener("load", () => {
+    scheduleNeedleHome();
+    scheduleTweezerHome();
+  });
   els.recallNeedle.addEventListener("click", recallNeedle);
+  els.recallTweezer.addEventListener("click", recallTweezer);
   els.shadowOpacity.addEventListener("input", drawBoard);
   els.showShadowCodes.addEventListener("change", drawBoard);
   els.boardZoom.addEventListener("input", () => {
@@ -161,7 +183,9 @@ function bindEvents() {
   els.colorSearch.addEventListener("input", renderRack);
   els.jarRack.addEventListener("mousedown", startJarDrag);
   els.trayCanvas.addEventListener("mousedown", startTrayShake);
+  els.clearTrayButton.addEventListener("click", clearTray);
   els.needle.addEventListener("mousedown", startNeedleDrag);
+  els.tweezer.addEventListener("mousedown", startTweezerDrag);
   window.addEventListener("mousedown", handleExtraMouseDown, true);
   window.addEventListener("mousemove", handleGlobalMove);
   window.addEventListener("mouseup", handleGlobalUp);
@@ -328,6 +352,7 @@ function drawBoard() {
       }
 
       if (placed) drawBoardBead(cx, cy, size, placed, target?.code === placed.code);
+      if (placed && state.tweezer.targetIndex === index) drawTweezerTarget(cx, cy, size);
     }
   }
 
@@ -398,6 +423,16 @@ function drawBoardBead(cx, cy, size, bead, correct) {
   boardCtx.beginPath();
   boardCtx.arc(cx, cy, Math.max(1.25, radius * .27), 0, Math.PI * 2);
   boardCtx.fill();
+}
+
+function drawTweezerTarget(cx, cy, size) {
+  boardCtx.save();
+  boardCtx.strokeStyle = "rgba(25,112,79,.92)";
+  boardCtx.lineWidth = Math.max(1.8, size * .12);
+  boardCtx.beginPath();
+  boardCtx.arc(cx, cy, Math.max(4.8, size * .48), 0, Math.PI * 2);
+  boardCtx.stroke();
+  boardCtx.restore();
 }
 
 function renderRack() {
@@ -640,6 +675,17 @@ function traySlotY(row) { return 49 + row * 17.2; }
 function updateTrayCount() {
   els.trayCount.textContent = state.trayBeads.length;
   els.trayWrap.classList.toggle("has-beads", state.trayBeads.length > 0);
+  els.clearTrayButton.disabled = state.trayBeads.length === 0;
+}
+
+function clearTray() {
+  if (!state.trayBeads.length) return;
+  const count = state.trayBeads.length;
+  state.trayBeads = [];
+  state.trayShake = null;
+  updateTrayCount();
+  drawTray();
+  showToast(`豆铲已清空，共移除 ${count} 颗豆子`);
 }
 
 function startNeedleDrag(event) {
@@ -726,6 +772,106 @@ function recallNeedle() {
   stopFeedTimer();
   positionNeedleHome();
   showToast("豆针已召回");
+}
+
+function startTweezerDrag(event) {
+  if (event.button !== 0 || state.jarDrag || state.trayShake || state.needle.dragging) return;
+  event.preventDefault();
+  const rect = els.tweezer.getBoundingClientRect();
+  state.tweezer.dragging = true;
+  state.tweezer.hasMoved = true;
+  state.tweezer.targetIndex = -1;
+  state.tweezer.offsetX = event.clientX - rect.left;
+  state.tweezer.offsetY = event.clientY - rect.top;
+  els.tweezer.classList.add("dragging");
+  els.tweezer.classList.remove("holding");
+  setTweezerPosition(rect.left, rect.top);
+}
+
+function handleTweezerMove(event) {
+  setTweezerPosition(event.clientX - state.tweezer.offsetX, event.clientY - state.tweezer.offsetY);
+  const cell = boardCellAtTweezerTip();
+  const targetIndex = cell && state.placed[cell.index] ? cell.index : -1;
+  if (targetIndex !== state.tweezer.targetIndex) {
+    state.tweezer.targetIndex = targetIndex;
+    els.tweezer.classList.toggle("ready", targetIndex >= 0);
+    drawBoard();
+  }
+}
+
+function finishTweezerDrag() {
+  const targetIndex = state.tweezer.targetIndex;
+  const releasedCell = boardCellAtTweezerTip();
+  state.tweezer.dragging = false;
+  state.tweezer.targetIndex = -1;
+  els.tweezer.classList.remove("dragging", "ready");
+
+  if (targetIndex < 0 || !state.placed[targetIndex]) {
+    drawBoard();
+    if (releasedCell) showToast("这个位置没有已放好的豆子");
+    return;
+  }
+
+  finalizeTransaction();
+  const bead = state.placed[targetIndex];
+  state.placed[targetIndex] = null;
+  state.undoStack.push([{ index: targetIndex, previous: bead, bead: null }]);
+  els.undoButton.disabled = false;
+  els.tweezerHeld.style.setProperty("--held-color", bead.hex);
+  els.tweezer.classList.add("holding");
+  window.clearTimeout(state.tweezer.heldTimer);
+  state.tweezer.heldTimer = window.setTimeout(() => els.tweezer.classList.remove("holding"), 900);
+  drawBoard();
+  updateProgress();
+  renderRack();
+  const row = Math.floor(targetIndex / state.pattern.width) + 1;
+  const col = targetIndex % state.pattern.width + 1;
+  showToast(`已用镊子取出 ${bead.code}（第 ${row} 行 · 第 ${col} 列）`);
+}
+
+function setTweezerPosition(left, top) {
+  const safeLeft = clamp(left, 8, Math.max(8, window.innerWidth - 54));
+  const safeTop = clamp(top, 8, Math.max(8, window.innerHeight - 184));
+  state.tweezer.x = safeLeft;
+  state.tweezer.y = safeTop;
+  els.tweezer.style.left = `${safeLeft}px`;
+  els.tweezer.style.top = `${safeTop}px`;
+  els.tweezer.style.right = "auto";
+  els.tweezer.style.bottom = "auto";
+}
+
+function positionTweezerHome() {
+  const home = els.tweezerHome.getBoundingClientRect();
+  if (!home.width || !home.height) return false;
+  setTweezerPosition(home.left + home.width / 2 - 23, home.top + home.height / 2 - 92);
+  return true;
+}
+
+function scheduleTweezerHome() {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (!state.tweezer.dragging && !state.tweezer.hasMoved && !positionTweezerHome()) {
+      window.setTimeout(scheduleTweezerHome, 80);
+    }
+  }));
+}
+
+function recallTweezer() {
+  state.tweezer.dragging = false;
+  state.tweezer.hasMoved = false;
+  state.tweezer.targetIndex = -1;
+  els.tweezer.classList.remove("dragging", "ready", "holding");
+  positionTweezerHome();
+  drawBoard();
+  showToast("镊子已召回");
+}
+
+function tweezerTip() {
+  return { x: state.tweezer.x + 23, y: state.tweezer.y + 169 };
+}
+
+function boardCellAtTweezerTip() {
+  const tip = tweezerTip();
+  return boardCellFromPoint(tip.x, tip.y);
 }
 
 function needleTip() {
@@ -1293,6 +1439,7 @@ function handleGlobalMove(event) {
   }
   if (state.jarDrag) return handleJarMove(event);
   if (state.trayShake) return handleTrayMove(event);
+  if (state.tweezer.dragging) return handleTweezerMove(event);
   if (state.needle.dragging) handleNeedleMove(event);
 }
 
@@ -1313,6 +1460,7 @@ function handleGlobalUp(event) {
   if (event.button !== 0) return;
   if (state.jarDrag) return finishJarDrag();
   if (state.trayShake) return finishTrayShake();
+  if (state.tweezer.dragging) return finishTweezerDrag();
   if (state.needle.dragging) finishNeedleDrag();
 }
 

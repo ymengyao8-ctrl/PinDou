@@ -125,6 +125,9 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .tray-stat { text-align: right; }
 .tray-stat strong { display: block; font-family: Georgia, serif; font-size: 26px; line-height: 1; }
 .tray-stat span { color: var(--muted); font-size: 10px; }
+.tray-actions { display: flex; align-items: center; gap: 10px; }
+.tray-clear { padding: 6px 9px; color: #8f574b; border-color: rgba(143,87,75,.24); background: rgba(255,249,246,.72); font-size: 9px; font-weight: 800; }
+.tray-clear:hover:not(:disabled) { border-color: rgba(143,87,75,.48); background: #fff7f3; }
 
 .tray-wrap {
   position: relative;
@@ -170,6 +173,32 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .needle-home::before { content: ""; position: absolute; left: 60px; top: 2px; width: 12px; height: 24px; border-radius: 6px; background: linear-gradient(90deg, #295f50, #4b8f78, #225242); }
 .needle-home::after { content: ""; position: absolute; left: 63px; top: 23px; width: 6px; height: 14px; border-left: 1px solid #747d78; border-right: 1px solid #747d78; }
 .needle-home:hover { color: var(--green); background-color: rgba(255,255,255,.48); }
+.tool-home-actions { display: flex; align-items: center; gap: 2px; }
+.tweezer-home {
+  position: relative;
+  width: 86px;
+  height: 48px;
+  padding: 27px 0 0;
+  border: 0;
+  color: #66736d;
+  background: radial-gradient(ellipse at 50% 35%, rgba(31,54,44,.18), transparent 58%);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.tweezer-home::before, .tweezer-home::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  width: 4px;
+  height: 29px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #8e9692, #e7ebe8, #7a827e);
+  transform-origin: 50% 2px;
+}
+.tweezer-home::before { left: 38px; transform: rotate(-7deg); }
+.tweezer-home::after { right: 38px; transform: rotate(7deg); }
+.tweezer-home:hover { color: var(--green); background-color: rgba(255,255,255,.48); }
 
 .color-rack { display: flex; flex-direction: column; padding: 16px 12px 12px; overflow: hidden; }
 .rack-heading { padding: 0 4px 12px; }
@@ -246,6 +275,32 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .needle-load { position: absolute; left: 10px; right: 10px; top: 105px; height: 73px; display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start; pointer-events: none; }
 .needle-load i { width: 28px; height: 7px; flex: 0 0 7px; margin-top: -1px; border: 1px solid rgba(42,48,45,.36); border-radius: 5px; background: var(--bean-color); box-shadow: inset 0 2px rgba(255,255,255,.35); }
 .needle-badge { position: absolute; right: -3px; top: 4px; min-width: 20px; height: 20px; display: grid; place-items: center; border-radius: 10px; color: white; background: #27312d; font-size: 10px; font-weight: 900; }
+
+.tweezer {
+  position: fixed;
+  z-index: 82;
+  right: 210px;
+  bottom: 28px;
+  width: 46px;
+  height: 176px;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  transform-origin: 50% 15%;
+  transition: filter .12s, transform .12s;
+}
+.tweezer:active { cursor: grabbing; }
+.tweezer.dragging { filter: drop-shadow(0 8px 8px rgba(31,49,40,.22)); }
+.tweezer.ready { filter: drop-shadow(0 0 8px rgba(36,120,88,.52)); transform: scale(.97); }
+.tweezer-grip { position: absolute; z-index: 2; left: 8px; right: 8px; top: 23px; height: 48px; border-radius: 10px; background: repeating-linear-gradient(0deg, rgba(255,255,255,.23) 0 2px, transparent 2px 5px), linear-gradient(90deg, #7e8782, #dce2de 48%, #737c77); box-shadow: inset 2px 0 rgba(255,255,255,.42); }
+.tweezer-arms i { position: absolute; top: 0; width: 7px; height: 166px; border-radius: 5px 5px 2px 2px; background: linear-gradient(90deg, #737b77, #eef2ef 48%, #858d89); box-shadow: inset 1px 0 rgba(255,255,255,.5); transform-origin: 50% 10px; }
+.tweezer-arms i:first-child { left: 11px; transform: rotate(-4.2deg); }
+.tweezer-arms i:last-child { right: 11px; transform: rotate(4.2deg); }
+.tweezer.ready .tweezer-arms i:first-child { transform: rotate(-1.8deg); }
+.tweezer.ready .tweezer-arms i:last-child { transform: rotate(1.8deg); }
+.tweezer-held { position: absolute; z-index: 3; left: 50%; bottom: 0; width: 14px; height: 14px; border: 1px solid rgba(31,43,37,.34); border-radius: 50%; background: var(--held-color, transparent); box-shadow: inset 0 3px rgba(255,255,255,.35); opacity: 0; transform: translate(-50%, 4px); transition: opacity .1s, transform .1s; }
+.tweezer.holding .tweezer-held { opacity: 1; transform: translate(-50%, 0); }
+.tweezer-label { position: absolute; left: 50%; top: 76px; padding: 2px 5px; border-radius: 6px; color: #43514a; background: rgba(250,250,247,.8); font-size: 8px; font-weight: 900; letter-spacing: .08em; transform: translateX(-50%) rotate(-90deg); }
 
 .dialog-backdrop { position: fixed; z-index: 200; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(28,34,31,.45); backdrop-filter: blur(8px); transition: opacity .2s; }
 .dialog-backdrop.hidden { pointer-events: none; opacity: 0; }

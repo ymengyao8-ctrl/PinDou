@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>电子拼豆</title>
-    <link rel="stylesheet" href="./styles.css?v=5" />
+    <link rel="stylesheet" href="./styles.css?v=6" />
   </head>
   <body>
     <main class="studio-shell">
@@ -59,7 +59,7 @@
           <div class="board-viewport" id="boardViewport">
             <canvas id="boardCanvas" aria-label="点阵豆板"></canvas>
           </div>
-          <p class="board-tip">每个影子格内显示购买色号；鼠标悬停可查看大号色号与坐标。按住左键移动豆针，同时按住右键夹紧。</p>
+          <p class="board-tip">每个影子格内显示购买色号；鼠标悬停可查看大号色号与坐标。放错时，把镊子拖到那颗豆子上松手即可单颗取出。</p>
         </section>
 
         <section class="tool-zone">
@@ -68,7 +68,10 @@
               <p class="step-label">01 · 装豆 / 02 · 理豆</p>
               <h2>十道立豆铲</h2>
             </div>
-            <div class="tray-stat"><strong id="trayCount">0</strong><span>颗豆</span></div>
+            <div class="tray-actions">
+              <button id="clearTrayButton" class="tray-clear" type="button" disabled>清空豆铲</button>
+              <div class="tray-stat"><strong id="trayCount">0</strong><span>颗豆</span></div>
+            </div>
           </div>
           <div class="tray-wrap" id="trayWrap">
             <canvas id="trayCanvas" width="720" height="250" aria-label="十道立豆铲"></canvas>
@@ -79,12 +82,17 @@
           <div class="needle-dock">
             <div>
               <p class="step-label">工具</p>
-              <h3>双针滑豆笔</h3>
-              <p>针尖对准有豆的凹槽，同时按住左右键；这一行有几颗就夹起几颗。</p>
+              <h3>双针滑豆笔 · 纠错镊子</h3>
+              <p>双针负责连续滑豆；放错一颗时，拖动镊子对准豆子，松开即可单颗取出。</p>
             </div>
-            <button id="recallNeedle" class="needle-home" type="button" title="把豆针召回停放位">
-              <span>召回豆针</span>
-            </button>
+            <div class="tool-home-actions">
+              <button id="recallNeedle" class="needle-home" type="button" title="把豆针召回停放位">
+                <span>召回豆针</span>
+              </button>
+              <button id="recallTweezer" class="tweezer-home" type="button" title="把镊子召回停放位">
+                <span>召回镊子</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -108,6 +116,13 @@
           <div class="needle-rods"><i></i><i></i></div>
           <div id="needleLoad" class="needle-load"></div>
           <span id="needleBadge" class="needle-badge">0</span>
+        </div>
+
+        <div id="tweezer" class="tweezer" role="button" tabindex="0" aria-label="单颗纠错镊子">
+          <div class="tweezer-grip"></div>
+          <div class="tweezer-arms"><i></i><i></i></div>
+          <span id="tweezerHeld" class="tweezer-held"></span>
+          <span class="tweezer-label">镊子</span>
         </div>
 
         <div id="jarGhost" class="jar-ghost" aria-hidden="true">
@@ -172,6 +187,7 @@
           <li><strong>理豆</strong><span>放回豆罐，再按住豆铲空白处左右摇晃，散豆会滚进十道凹槽。</span></li>
           <li><strong>取豆</strong><span>按住双针左键拖动，针尖必须对准有豆的那一行；再按住右键夹紧。槽里几颗就取几颗，空槽和散豆都不能直接取。触控板也可按住 Option / Alt 代替右键。</span></li>
           <li><strong>滑豆</strong><span>保持左键，把豆针移到图纸影子的格心；松开右键会开始落豆，匀速平移可以连续滑豆。</span></li>
+          <li><strong>单颗纠错</strong><span>拖动银色镊子，把尖端对准豆板上已经放好的豆子；松开鼠标即可只取出这一颗，空格不会被误操作。</span></li>
         </ol>
         <div class="warning-note">右键松得太久，剩余豆子会一次滑落并散到邻格——这时用“撤回本次”重来。浏览器右键菜单已在工作台内关闭。</div>
         <button id="startPlaying" class="primary" type="button">明白，开始拼</button>
@@ -182,6 +198,6 @@
     <div id="boardTooltip" class="board-tooltip" role="tooltip" aria-hidden="true"></div>
 
     <script src="../palettes.js?v=15"></script>
-    <script defer src="./app.js?v=5"></script>
+    <script defer src="./app.js?v=6"></script>
   </body>
 </html>
